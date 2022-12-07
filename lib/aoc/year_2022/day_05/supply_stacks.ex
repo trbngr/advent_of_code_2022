@@ -101,31 +101,23 @@ defmodule Aoc.Year2022.Day05.SupplyStacks do
     |> Enum.join()
   end
 
-  def execute_move(:part1, %{count: count, source: source, destination: destination}, stacks) do
-    source_stack = Map.get(stacks, source)
-    destination_stack = Map.get(stacks, destination)
-
-    {source_stack, destination_stack} =
-      source_stack
-      |> Enum.with_index()
-      |> Enum.reduce_while({source_stack, destination_stack}, fn {_, index},
-                                                                 {source, destination} ->
-        cond do
-          index < count ->
-            {crate, source} = List.pop_at(source, 0)
-            {:cont, {source, [crate | destination]}}
-
-          true ->
-            {:halt, {source, destination}}
-        end
-      end)
+  def execute_move(:part1, %{source: source, destination: destination} = move, stacks) do
+    {source_stack, destination_stack, pulled_crates} = pull_crates(move, stacks)
 
     stacks
     |> Map.put(source, source_stack)
-    |> Map.put(destination, destination_stack)
+    |> Map.put(destination, pulled_crates ++ destination_stack)
   end
 
-  def execute_move(:part2, %{count: count, source: source, destination: destination}, stacks) do
+  def execute_move(:part2, %{source: source, destination: destination} = move, stacks) do
+    {source_stack, destination_stack, pulled_crates} = pull_crates(move, stacks)
+
+    stacks
+    |> Map.put(source, source_stack)
+    |> Map.put(destination, Enum.reverse(pulled_crates) ++ destination_stack)
+  end
+
+  def pull_crates(%{count: count, source: source, destination: destination}, stacks) do
     source_stack = Map.get(stacks, source)
     destination_stack = Map.get(stacks, destination)
 
@@ -143,9 +135,7 @@ defmodule Aoc.Year2022.Day05.SupplyStacks do
         end
       end)
 
-    stacks
-    |> Map.put(source, source_stack)
-    |> Map.put(destination, Enum.reverse(pulled_crates) ++ destination_stack)
+    {source_stack, destination_stack, pulled_crates}
   end
 
   def read_environment(input) do
